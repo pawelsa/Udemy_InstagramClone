@@ -1,0 +1,54 @@
+<RelativeLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content" xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <android.support.v4.widget.SwipeRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/refreshLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/contentListView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/colorPrimary"
+            android:orientation="vertical" />
+
+    </android.support.v4.widget.SwipeRefreshLayout>
+
+    <RelativeLayout
+        android:id="@+id/addCommentLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorPrimary"
+        android:layout_alignParentBottom="true"
+        android:visibility="gone">
+
+        <!---->
+
+        <EditText
+            android:id="@+id/enterCommentEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_toStartOf="@+id/sendButton"
+            android:descendantFocusability="beforeDescendants"
+            android:hint="@string/writeComment"
+            android:inputType="text"
+            android:padding="12dp" />
+
+        <!---->
+
+        <ImageButton
+            android:id="@+id/sendButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@+id/enterCommentEditText"
+            android:layout_alignParentEnd="true"
+            android:layout_alignTop="@+id/enterCommentEditText"
+            android:background="@color/sendButotnBackground"
+            android:padding="12dp"
+            android:src="@drawable/ic_send_black_24dp" />
+
+    </RelativeLayout>
+
+</RelativeLayout>

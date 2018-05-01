@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">Udemy_InstagramClone</string>
+
+    <string name="username">Username</string>
+    <string name="password">Password</string>
+    <string name="login">Log In</string>
+    <string name="signin">Sign In</string>
+
+    <string name="contacts">Contacts</string>
+    <string name="logout">Logout</string>
+    <string name="share">Share</string>
+    <string name="addAvatar">Add Profile Picture</string>
+
+    <string name="title_activity_gallery">Gallery</string>
+    <string name="image">Image</string>
+    <string name="menu">Menu</string>
+
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="delete">Do you want to DELETE this photo ?</string>
+
+    <string name="addDescription">Add description</string>
+
+    <string name="addComment">Write Comment</string>
+    <string name="writeComment">Enter your comment</string>
+</resources>
