@@ -2,6 +2,9 @@ package com.example.pawel.udemy_instagramclone.baseFunctions.mainGallery;
 
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.os.Bundle;
@@ -19,6 +22,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.RelativeLayout;
 
+import com.example.pawel.udemy_instagramclone.MyFragmentManager;
 import com.example.pawel.udemy_instagramclone.R;
 import com.parse.FindCallback;
 import com.parse.ParseException;
@@ -36,16 +40,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import static com.example.pawel.udemy_instagramclone.MyFragmentManager.USER_GALLERY_TAG;
 
-public class Gallery extends android.support.v4.app.Fragment implements DownloadPhotosAndComments.OnPhotoDownloadStatusListener{
-    private static final Gallery ourInstance = new Gallery();
 
-    public static Gallery getInstance() {
-        return ourInstance;
-    }
-
-    private View v;
-
+public class Gallery extends android.support.v4.app.Fragment implements DownloadPhotosAndComments.OnPhotoDownloadStatusListener {
 
     private SwipeRefreshLayout refreshLayout;
     private CustomGalleryAdapter adapter;
@@ -59,30 +57,30 @@ public class Gallery extends android.support.v4.app.Fragment implements Download
 
     private String ImageID;
 
-    private ArrayList<PhotoInfoObject> photoObjects;
-
-    private static startNewFragment startNewFragment;
-
-
     @Override
     public void setArguments(Bundle args) {
         super.setArguments(args);
-
         username = args.getString("username");
     }
-
-
 
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
-
-        v = inflater.inflate(R.layout.activity_gallery, container, false);
-
-        return v;
+        return inflater.inflate(R.layout.activity_gallery, container, false);
     }
 
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        layout = view.findViewById(R.id.contentListView);
+        refreshLayout = view.findViewById(R.id.refreshLayout);
+
+        addCommentLayout = view.findViewById(R.id.addCommentLayout);
+        addCommentEditText = view.findViewById(R.id.enterCommentEditText);
+        sendButton = view.findViewById(R.id.sendButton);
+    }
 
     @Override
     public void onActivityCreated(final Bundle savedInstanceState) {
@@ -114,19 +112,9 @@ public class Gallery extends android.support.v4.app.Fragment implements Download
             actionBar.hide();
             actionBar.setDisplayShowHomeEnabled(false);
         }
-
-        layout = v.findViewById(R.id.contentListView);
-        refreshLayout = v.findViewById(R.id.refreshLayout);
-
-        addCommentLayout = v.findViewById(R.id.addCommentLayout);
-        addCommentEditText = v.findViewById(R.id.enterCommentEditText);
-        sendButton = v.findViewById(R.id.sendButton);
-
         layout.setHasFixedSize(true);
         layout.setLayoutManager(new LinearLayoutManager(getActivity()));
         layout.setItemAnimator(new DefaultItemAnimator());
-
-        photoObjects = new ArrayList<>();
     }
 
     private void setAdapter() {
@@ -137,7 +125,8 @@ public class Gallery extends android.support.v4.app.Fragment implements Download
             @Override
             public void onNameClicked(String username) {
 
-                startNewFragment.openNewFragment(username);
+                MyFragmentManager myFragmentManager=MyFragmentManager.getInstance();
+                myFragmentManager.startFragment(USER_GALLERY_TAG, username);
             }
 
             @Override
@@ -163,14 +152,17 @@ public class Gallery extends android.support.v4.app.Fragment implements Download
 
     private void transferQuery() {
 
-        final DownloadPhotosAndComments.OnPhotoDownloadStatusListener onPhotoDownloadStatusListener=this;
-        getActivity().runOnUiThread(new Runnable() {
+        final DownloadPhotosAndComments.OnPhotoDownloadStatusListener onPhotoDownloadStatusListener = this;
+        Runnable runnable = new Runnable() {
             @Override
             public void run() {
+
                 DownloadPhotosAndComments downloadPhotosAndComments = DownloadPhotosAndComments.getInstance();
                 downloadPhotosAndComments.transferQuery(username, adapter.getOnPhotoObjectListener(), onPhotoDownloadStatusListener);
             }
-        });
+        };
+        Handler handler = new Handler();
+        handler.post(runnable);
     }
 
     private void sendButtonOnClickListener() {
@@ -250,15 +242,5 @@ public class Gallery extends android.support.v4.app.Fragment implements Download
     @Override
     public void onStatusChange(boolean loading) {
         refreshLayout.setRefreshing(loading);
-    }
-
-    public static void setStartNewFragment(startNewFragment mStartNewFragment) {
-
-        startNewFragment = mStartNewFragment;
-    }
-
-    public interface startNewFragment {
-
-        void openNewFragment(String username);
     }
 }

@@ -1,7 +1,6 @@
 package com.example.pawel.udemy_instagramclone.baseFunctions;
 
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
+import android.support.annotation.Nullable;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -14,13 +13,11 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.Toast;
 
+import com.example.pawel.udemy_instagramclone.MyFragmentManager;
 import com.example.pawel.udemy_instagramclone.R;
 import com.example.pawel.udemy_instagramclone.UserOnlineStatusManager;
-import com.example.pawel.udemy_instagramclone.baseFunctions.mainGallery.Gallery;
 import com.parse.FindCallback;
-import com.parse.LogOutCallback;
 import com.parse.ParseException;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
@@ -28,16 +25,18 @@ import com.parse.ParseUser;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.example.pawel.udemy_instagramclone.MyFragmentManager.ADD_AVATAR;
+import static com.example.pawel.udemy_instagramclone.MyFragmentManager.GALLERY_TAG;
+import static com.example.pawel.udemy_instagramclone.MyFragmentManager.SHARE_PHOTO_TAG;
+
 public class Contacts extends android.support.v4.app.Fragment {
     private static final Contacts ourInstance = new Contacts();
+
     public static Contacts getInstance() {
         return ourInstance;
     }
 
-    View v;
-
     ListView listView;
-    android.support.v7.widget.Toolbar toolbar;
 
     ArrayList<String> users;
     ArrayAdapter<String> adapter;
@@ -46,7 +45,6 @@ public class Contacts extends android.support.v4.app.Fragment {
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
-
         inflater.inflate(R.menu.share_menu, menu);
     }
 
@@ -55,10 +53,8 @@ public class Contacts extends android.support.v4.app.Fragment {
 
         switch (item.getItemId()) {
             case android.R.id.home:
-                FragmentManager fm =  getActivity().getSupportFragmentManager();
-                if (fm.getBackStackEntryCount() > 0) {
-                    fm.popBackStack();
-                }
+                MyFragmentManager myFragmentManager = MyFragmentManager.getInstance();
+                myFragmentManager.popBackStack();
                 break;
             case R.id.logoutMenu:
                 logoutUser();
@@ -78,39 +74,32 @@ public class Contacts extends android.support.v4.app.Fragment {
 
     private void startSharePhotoFragment() {
 
-        FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-
-        SharePhoto fragment = new SharePhoto();
-
-        Bundle bundle = new Bundle();
-        bundle.putInt("type", 2);
-        fragment.setArguments(bundle);
-
-        fragmentTransaction.addToBackStack(null);
-        fragmentTransaction.replace(R.id.active_fragment, fragment);
-        fragmentTransaction.commit();
+        MyFragmentManager myFragmentManager = MyFragmentManager.getInstance();
+        myFragmentManager.startFragment(SHARE_PHOTO_TAG, ADD_AVATAR);
     }
 
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-
-        v = inflater.inflate(R.layout.activity_contacts, container, false);
-
-        return v;
+        return inflater.inflate(R.layout.activity_contacts, container, false);
     }
 
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        mainMethod(view);
+        listView = view.findViewById(R.id.contactList);
     }
 
-    private void mainMethod(View view) {
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        mainMethod();
+    }
 
-        initialize(view);
+    private void mainMethod() {
+
+        initialize();
 
         setAdapter();
 
@@ -119,34 +108,22 @@ public class Contacts extends android.support.v4.app.Fragment {
         openGalleryWhenUsernameClicked();
     }
 
-    private void initialize(View view) {
+    private void initialize() {
 
-        listView = view.findViewById(R.id.contactList);
-
-        configureToolbar();
+        configureActionBar();
 
         users = new ArrayList<>();
     }
 
-    private void configureToolbar() {
-/*
-        toolbar.setTitle(ParseUser.getCurrentUser().getUsername());
+    private void configureActionBar() {
 
-        ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);*/
-        ActionBar actionBar=((AppCompatActivity)getActivity()).getSupportActionBar();
-        if (actionBar!=null){
+        ActionBar actionBar = ((AppCompatActivity) getActivity()).getSupportActionBar();
+        if (actionBar != null) {
             actionBar.show();
             actionBar.setTitle(ParseUser.getCurrentUser().getUsername());
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
         setHasOptionsMenu(true);
-    }
-
-    public void refresh() {
-
-        users.clear();
-
-        createUsersList();
     }
 
     private void setAdapter() {
@@ -169,20 +146,14 @@ public class Contacts extends android.support.v4.app.Fragment {
 
                 if (e == null && objects.size() > 0) {
 
-                    for (ParseUser user : objects) {
-
+                    for (ParseUser user : objects)
                         users.add(user.getUsername());
-                    }
-
                 } else {
-
                     e.printStackTrace();
                 }
-
                 adapter.notifyDataSetChanged();
             }
         });
-
     }
 
     private void openGalleryWhenUsernameClicked() {
@@ -191,42 +162,17 @@ public class Contacts extends android.support.v4.app.Fragment {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
-                FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
-                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-
-                Gallery fragment = new Gallery();
-
-                Bundle bundle = new Bundle();
-                bundle.putString("username", listView.getItemAtPosition(position).toString());
-                fragment.setArguments(bundle);
-
-                fragmentTransaction.addToBackStack(null);
-                fragmentTransaction.replace(R.id.active_fragment, fragment);
-                fragmentTransaction.commit();
-
+                MyFragmentManager myFragmentManager=MyFragmentManager.getInstance();
+                myFragmentManager.startFragment(GALLERY_TAG, listView.getItemAtPosition(position).toString());
             }
         });
+
     }
 
-    void closeFragment() {
+    public void refresh() {
 
-        //getFragmentManager().beginTransaction().remove(this).commit();
+        users.clear();
 
-        FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-
-
-        Gallery fragment = new Gallery();
-        fragmentTransaction.replace(R.id.active_fragment, fragment);
-
-
-        getActivity().findViewById(R.id.listOfAllPhotos).setAlpha((float) 1.0);
-        getActivity().findViewById(R.id.addNewPhoto).setAlpha((float) 0.3);
-        getActivity().findViewById(R.id.myProfile).setAlpha((float) 0.3);
-
-
-        fragmentTransaction.commit();
+        createUsersList();
     }
-
-
 }

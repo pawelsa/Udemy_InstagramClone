@@ -1,30 +1,21 @@
 package com.example.pawel.udemy_instagramclone.baseFunctions;
 
 import android.Manifest;
-import android.content.ContentUris;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.BitmapShader;
-import android.graphics.Canvas;
-import android.graphics.Matrix;
-import android.graphics.Paint;
-import android.graphics.Shader;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -32,42 +23,30 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.example.pawel.udemy_instagramclone.MyFragmentManager;
 import com.example.pawel.udemy_instagramclone.R;
 import com.example.pawel.udemy_instagramclone.SquareCropView;
-import com.example.pawel.udemy_instagramclone.baseFunctions.mainGallery.Gallery;
-import com.example.pawel.udemy_instagramclone.myImageGallery.AlbumLoader;
 import com.example.pawel.udemy_instagramclone.myImageGallery.GalleryAdapter;
 import com.example.pawel.udemy_instagramclone.myImageGallery.LoadPhotosFromMemory;
-import com.example.pawel.udemy_instagramclone.myImageGallery.PhotoLoader;
 import com.example.pawel.udemy_instagramclone.myImageGallery.Photo;
-import com.example.pawel.udemy_instagramclone.myImageGallery.UploadChoosenImage;
+import com.example.pawel.udemy_instagramclone.myImageGallery.UploadChosenImage;
 import com.fenchtose.nocropper.BitmapResult;
 import com.fenchtose.nocropper.CropState;
 import com.fenchtose.nocropper.CropperView;
-import com.parse.ParseException;
-import com.parse.ParseFile;
-import com.parse.ParseObject;
-import com.parse.ParseUser;
-import com.parse.SaveCallback;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import static android.app.Activity.RESULT_OK;
 
-public class SharePhoto extends Fragment implements UploadChoosenImage.OnImageSharedListener {
+public class SharePhoto extends Fragment implements UploadChosenImage.OnImageSharedListener {
     private static final SharePhoto ourInstance = new SharePhoto();
 
     public static SharePhoto getInstance() {
         return ourInstance;
     }
 
-    private View v;
     private static final int RC_PHOTO_PICKER = 2;
 
     private int actionType;
@@ -102,12 +81,26 @@ public class SharePhoto extends Fragment implements UploadChoosenImage.OnImageSh
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
-
-        v = inflater.inflate(R.layout.activity_share_photo, container, false);
-
-        return v;
+        return inflater.inflate(R.layout.activity_share_photo, container, false);
     }
 
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        cropView = view.findViewById(R.id.cropView);
+        addDescription = view.findViewById(R.id.addDescription);
+        squareCropView = view.findViewById(R.id.squareCropViewRelativeLayout);
+        myGalleryView = view.findViewById(R.id.myGalleryView);
+    }
+
+    @Override
+    public void setArguments(@Nullable Bundle args) {
+        super.setArguments(args);
+
+        if (args != null) {
+            actionType = args.getInt("type");
+        }
+    }
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
@@ -122,28 +115,15 @@ public class SharePhoto extends Fragment implements UploadChoosenImage.OnImageSh
         setupGalleryAdapter();
     }
 
-    @Override
-    public void setArguments(@Nullable Bundle args) {
-        super.setArguments(args);
-
-        if (args != null) {
-            actionType = args.getInt("type");
-        }
-    }
-
-
     private void initialization() {
 
-        findViews();
+        setHasOptionsMenu(true);
 
         ActionBar actionBar = ((AppCompatActivity) getActivity()).getSupportActionBar();
         if (actionBar != null) {
             actionBar.show();
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
-
-        setHasOptionsMenu(true);
-
         myGalleryAdapter = new GalleryAdapter(getContext());
 
         cropView.setGridCallback(new CropperView.GridCallback() {
@@ -159,13 +139,6 @@ public class SharePhoto extends Fragment implements UploadChoosenImage.OnImageSh
         });
 
         requestPermission();
-    }
-
-    private void findViews() {
-
-        cropView = v.findViewById(R.id.cropView);
-        addDescription = v.findViewById(R.id.addDescription);
-        squareCropView = v.findViewById(R.id.squareCropViewRelativeLayout);
     }
 
     private void requestPermission() {
@@ -186,22 +159,27 @@ public class SharePhoto extends Fragment implements UploadChoosenImage.OnImageSh
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
         if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
             getAlbums();
         }
-
     }
 
     private void getAlbums() {
 
         try {
-            LoadPhotosFromMemory loadPhotosFromMemory = LoadPhotosFromMemory.getInstance();
-            loadPhotosFromMemory.proceedToLoading(getActivity(), myGalleryAdapter.getOnPhotoLoadListener());
+            final LoadPhotosFromMemory.OnPhotoLoadedListener onPhotoLoadedListener = myGalleryAdapter.getOnPhotoLoadListener();
+            Runnable runnable=new Runnable() {
+                @Override
+                public void run() {
+                    LoadPhotosFromMemory loadPhotosFromMemory = LoadPhotosFromMemory.getInstance();
+                    loadPhotosFromMemory.proceedToLoading(getActivity(), onPhotoLoadedListener);
+                }
+            };
+            Handler handler=new Handler();
+            handler.post(runnable);
         } catch (final Exception e) {
             e.printStackTrace();
         }
     }
-
 
     private void getAlbumsIfListIsEmpty() {
 
@@ -212,7 +190,6 @@ public class SharePhoto extends Fragment implements UploadChoosenImage.OnImageSh
 
     private void setupGalleryRecyclerView() {
 
-        myGalleryView = v.findViewById(R.id.myGalleryView);
         myGalleryView.setHasFixedSize(true);
         myGalleryView.setLayoutManager(new GridLayoutManager(getContext(), 3));
     }
@@ -273,14 +250,13 @@ public class SharePhoto extends Fragment implements UploadChoosenImage.OnImageSh
         Bitmap bitmap = result.getBitmap();
 
         if (bitmap != null) {
-            //Log.d("Cropper", "crop1 bitmap: " + bitmap.getWidth() + ", " + bitmap.getHeight());
-            UploadChoosenImage uploadChoosenImage = UploadChoosenImage.getInstance();
+            UploadChosenImage uploadChosenImage = UploadChosenImage.getInstance();
 
             if (actionType == 1) {
                 String description = addDescription.getText().toString();
-                uploadChoosenImage.uploadImage(getActivity(), bitmap, description, this);
+                uploadChosenImage.uploadImage(bitmap, description, this);
             } else {
-                uploadChoosenImage.uploadImage(getActivity(), bitmap, this);
+                uploadChosenImage.uploadImage(bitmap, this);
             }
         }
     }
@@ -290,19 +266,8 @@ public class SharePhoto extends Fragment implements UploadChoosenImage.OnImageSh
     }
 
     private void closeFragment() {
-        //getFragmentManager().beginTransaction().remove(this).commit();
-
-        FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-
-        Gallery fragment = Gallery.getInstance();
-        fragmentTransaction.replace(R.id.active_fragment, fragment);
-
-        getActivity().findViewById(R.id.listOfAllPhotos).setAlpha((float) 1.0);
-        getActivity().findViewById(R.id.addNewPhoto).setAlpha((float) 0.3);
-        getActivity().findViewById(R.id.myProfile).setAlpha((float) 0.3);
-
-        fragmentTransaction.commit();
+        MyFragmentManager myFragmentManager = MyFragmentManager.getInstance();
+        myFragmentManager.popBackStack();
     }
 
     @Override

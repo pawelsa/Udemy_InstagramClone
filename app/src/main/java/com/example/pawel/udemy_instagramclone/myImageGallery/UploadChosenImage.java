@@ -20,32 +20,30 @@ import java.io.ByteArrayOutputStream;
  * Created by Pawel on 01.05.2018.
  */
 
-public class UploadChoosenImage {
-    private static final UploadChoosenImage ourInstance = new UploadChoosenImage();
+public class UploadChosenImage {
+    private static final UploadChosenImage ourInstance = new UploadChosenImage();
 
-    public static UploadChoosenImage getInstance() {
+    public static UploadChosenImage getInstance() {
         return ourInstance;
     }
 
-    private UploadChoosenImage() {
+    private UploadChosenImage() {
     }
 
     private int actionType;
     private String description;
     private Bitmap bitmapToUpload;
-    private Activity activity;
 
-    OnImageSharedListener onImageSharedListener;
+    private OnImageSharedListener onImageSharedListener;
 
-    public void uploadImage(Activity activity, Bitmap bitmapToUpload, String description, OnImageSharedListener onImageSharedListener) {
+    public void uploadImage(Bitmap bitmapToUpload, String description, OnImageSharedListener onImageSharedListener) {
         this.actionType = 1;
         this.description = description;
-        uploadImage(activity, bitmapToUpload, onImageSharedListener);
+        uploadImage(bitmapToUpload, onImageSharedListener);
     }
 
-    public void uploadImage(Activity activity, Bitmap bitmapToUpload, OnImageSharedListener onImageSharedListener) {
+    public void uploadImage(Bitmap bitmapToUpload, OnImageSharedListener onImageSharedListener) {
         this.onImageSharedListener=onImageSharedListener;
-        this.activity = activity;
         if (actionType != 1)
             this.actionType = 2;
         this.bitmapToUpload = bitmapToUpload;
@@ -53,50 +51,6 @@ public class UploadChoosenImage {
         compressionAndUploadToServer();
 
         //TODO: Completed uploading
-    }
-
-    private Bitmap getResizedBitmap() {
-
-        int width = bitmapToUpload.getWidth();
-        int height = bitmapToUpload.getHeight();
-
-        Matrix matrix = new Matrix();
-
-        if (actionType == 1 || actionType == 2) {
-            int longer = width >= height ? width : height;
-            float scaleWidth = ((float) (actionType == 1 ? 1024 : 100)) / longer;
-            matrix.postScale(scaleWidth, scaleWidth);
-        }
-        Bitmap resizedBitmap = Bitmap.createBitmap(bitmapToUpload, 0, 0, width, height, matrix, false);
-        bitmapToUpload.recycle();
-        return resizedBitmap;
-    }
-
-    private Bitmap getAvatarBitmap() {
-
-        Bitmap bitmap = getResizedBitmap();
-
-        if (bitmap == null || bitmap.isRecycled()) {
-            return null;
-        }
-        float radius = 50;
-
-        Bitmap canvasBitmap = Bitmap.createBitmap(bitmap.getWidth(),
-                bitmap.getHeight(), Bitmap.Config.ARGB_8888);
-
-        BitmapShader shader = new BitmapShader(bitmap, Shader.TileMode.CLAMP,
-                Shader.TileMode.CLAMP);
-
-        Paint paint = new Paint();
-        paint.setAntiAlias(true);
-        paint.setShader(shader);
-
-        Canvas canvas = new Canvas(canvasBitmap);
-
-        canvas.drawCircle(bitmap.getWidth() / 2, bitmap.getHeight() / 2,
-                radius, paint);
-
-        return canvasBitmap;
     }
 
     private void compressionAndUploadToServer() {
@@ -152,6 +106,50 @@ public class UploadChoosenImage {
                 }
             });
         }
+    }
+
+    private Bitmap getResizedBitmap() {
+
+        int width = bitmapToUpload.getWidth();
+        int height = bitmapToUpload.getHeight();
+
+        Matrix matrix = new Matrix();
+
+        if (actionType == 1 || actionType == 2) {
+            int longer = width >= height ? width : height;
+            float scaleWidth = ((float) (actionType == 1 ? 1024 : 100)) / longer;
+            matrix.postScale(scaleWidth, scaleWidth);
+        }
+        Bitmap resizedBitmap = Bitmap.createBitmap(bitmapToUpload, 0, 0, width, height, matrix, false);
+        bitmapToUpload.recycle();
+        return resizedBitmap;
+    }
+
+    private Bitmap getAvatarBitmap() {
+
+        Bitmap bitmap = getResizedBitmap();
+
+        if (bitmap == null || bitmap.isRecycled()) {
+            return null;
+        }
+        float radius = 50;
+
+        Bitmap canvasBitmap = Bitmap.createBitmap(bitmap.getWidth(),
+                bitmap.getHeight(), Bitmap.Config.ARGB_8888);
+
+        BitmapShader shader = new BitmapShader(bitmap, Shader.TileMode.CLAMP,
+                Shader.TileMode.CLAMP);
+
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+        paint.setShader(shader);
+
+        Canvas canvas = new Canvas(canvasBitmap);
+
+        canvas.drawCircle(bitmap.getWidth() / 2, bitmap.getHeight() / 2,
+                radius, paint);
+
+        return canvasBitmap;
     }
 
     public interface OnImageSharedListener{
