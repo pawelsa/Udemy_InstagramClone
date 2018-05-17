@@ -23,4 +23,8 @@
 
     <string name="addComment">Write Comment</string>
     <string name="writeComment">Enter your comment</string>
+
+    <string name="gallery">Gallery</string>
+    <string name="addPhoto">Add photo</string>
+
 </resources>

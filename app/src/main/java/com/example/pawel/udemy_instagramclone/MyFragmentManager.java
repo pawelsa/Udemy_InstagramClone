@@ -3,10 +3,13 @@ package com.example.pawel.udemy_instagramclone;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 
@@ -23,57 +26,58 @@ import java.util.List;
  */
 
 public class MyFragmentManager {
-    private static final MyFragmentManager ourInstance = new MyFragmentManager();
+	private static final MyFragmentManager ourInstance = new MyFragmentManager();
 
-    public static MyFragmentManager getInstance() {
-        return ourInstance;
-    }
+	public static MyFragmentManager getInstance() {
+		return ourInstance;
+	}
 
-    private Hashtable<Integer, Fragment> fragmentHashtable = new Hashtable<>();
-    private List<String> TAGList = new ArrayList<>();
+	private Hashtable<Integer, Fragment> fragmentHashtable = new Hashtable<>();
+	private List<String> TAGList = new ArrayList<>();
 
 
-    public static final String GALLERY_TAG = "gallery_fragment";
-    public static final String USER_GALLERY_TAG = "user_gallery_fragment";
-    public static final String CONTACTS_TAG = "contacts_fragment";
-    public static final String SHARE_PHOTO_TAG = "sharePhoto_fragment";
-    public static final String ADD_AVATAR = "add_avatar";
+	public static final String GALLERY_TAG = "gallery_fragment";
+	public static final String USER_GALLERY_TAG = "user_gallery_fragment";
+	public static final String CONTACTS_TAG = "contacts_fragment";
+	public static final String SHARE_PHOTO_TAG = "sharePhoto_fragment";
+	public static final String ADD_AVATAR = "add_avatar";
 
-    private Gallery gallery;
-    private SharePhoto sharePhoto;
-    private Contacts contacts;
+	private Gallery gallery;
+	private SharePhoto sharePhoto;
+	private Contacts contacts;
 
-    private ImageView allPhotos;
-    private ImageView addPhoto;
-    private ImageView myProfile;
+	private ImageView allPhotos;
+	private ImageView addPhoto;
+	private ImageView myProfile;
+	private BottomNavigationView bottomNavigation;
 
-    private AppCompatActivity activity;
+	private AppCompatActivity activity;
 
-    private FragmentManager fragmentManager;
+	private FragmentManager fragmentManager;
 
-    public void startMyFragmentManager(AppCompatActivity activity) {
-        ourInstance.activity = activity;
+	public void startMyFragmentManager(AppCompatActivity activity) {
+		ourInstance.activity = activity;
 
-        ourInstance.allPhotos = activity.findViewById(R.id.listOfAllPhotos);
+        /*ourInstance.allPhotos = activity.findViewById(R.id.listOfAllPhotos);
         ourInstance.addPhoto = activity.findViewById(R.id.addNewPhoto);
-        ourInstance.myProfile = activity.findViewById(R.id.myProfile);
+        ourInstance.myProfile = activity.findViewById(R.id.myProfile);*/
 
-        ourInstance.gallery = new Gallery();
-        ourInstance.fragmentHashtable.put(0, ourInstance.gallery);
-        ourInstance.TAGList.add(0, GALLERY_TAG);
-        ourInstance.sharePhoto = SharePhoto.getInstance();
-        ourInstance.contacts = Contacts.getInstance();
+		ourInstance.gallery = new Gallery();
+		ourInstance.fragmentHashtable.put(0, ourInstance.gallery);
+		ourInstance.TAGList.add(0, GALLERY_TAG);
+		ourInstance.sharePhoto = SharePhoto.getInstance();
+		ourInstance.contacts = Contacts.getInstance();
 
-        ourInstance.fragmentManager = activity.getSupportFragmentManager();
+		ourInstance.fragmentManager = activity.getSupportFragmentManager();
 
-        ourInstance.startFirstFragment();
+		ourInstance.startFirstFragment();
 
-        ourInstance.onButtonClick();
-    }
+		ourInstance.onButtonClick();
+	}
 
-    private void onButtonClick() {
+	private void onButtonClick() {
 
-        ourInstance.allPhotos.setOnClickListener(new View.OnClickListener() {
+/*        ourInstance.allPhotos.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 startFragment(GALLERY_TAG);
@@ -92,104 +96,127 @@ public class MyFragmentManager {
             public void onClick(View v) {
                 startFragment(CONTACTS_TAG);
             }
-        });
-    }
+        });*/
 
-    private void startFirstFragment() {
+		bottomNavigation = activity.findViewById(R.id.bottom_navigation);
 
-        FragmentTransaction fragmentTransaction = ourInstance.fragmentManager.beginTransaction();
+		bottomNavigation.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
+			@Override
+			public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+				switch (item.getItemId()) {
+					case R.id.listOfAllPhotos: {
+						startFragment(GALLERY_TAG);
+						break;
+					}
+					case R.id.addNewPhoto: {
+						startFragment(SHARE_PHOTO_TAG);
+						break;
+					}
+					case R.id.myProfile: {
+						startFragment(CONTACTS_TAG);
+						break;
+					}
+				}
+				return true;
+			}
+		});
+	}
 
-        fragmentTransaction.add(R.id.active_fragment, ourInstance.gallery);
-        fragmentTransaction.commit();
-    }
+	private void startFirstFragment() {
 
-    public void startFragment(String TAG) {
-        ourInstance.startFragment(TAG, "");
-    }
+		FragmentTransaction fragmentTransaction = ourInstance.fragmentManager.beginTransaction();
 
-    public void startFragment(String TAG, String username) {
+		fragmentTransaction.add(R.id.active_fragment, ourInstance.gallery);
+		fragmentTransaction.commit();
+	}
 
-        FragmentTransaction fragmentTransaction = ourInstance.fragmentManager.beginTransaction();
+	public void startFragment(String TAG) {
+		ourInstance.startFragment(TAG, "");
+	}
 
-        setIconVisibility(TAG);
+	public void startFragment(String TAG, String username) {
 
-        switch (TAG) {
+		FragmentTransaction fragmentTransaction = ourInstance.fragmentManager.beginTransaction();
 
-            default:
-            case GALLERY_TAG:
-                String mTAG = GALLERY_TAG;
-                Gallery mGallery = new Gallery();
-                if (!username.equals("")) {
-                    Bundle args = new Bundle();
-                    args.putString("username", username);
-                    mGallery.setArguments(args);
-                    mTAG = USER_GALLERY_TAG;
-                }
-                fragmentTransaction.replace(R.id.active_fragment, mGallery, mTAG);
-                ourInstance.TAGList.add(0, mTAG);
-                ourInstance.fragmentHashtable.put(ourInstance.fragmentHashtable.size(), mGallery);
-                break;
-            case SHARE_PHOTO_TAG:
-                Bundle args = new Bundle();
+		//setIconVisibility(TAG);
 
-                if (username.equals(ADD_AVATAR)) {
-                    args.putInt("type", 2);
-                } else
-                    args.putInt("type", 1);
-                ourInstance.sharePhoto.setArguments(args);
+		switch (TAG) {
 
-                fragmentTransaction.replace(R.id.active_fragment, ourInstance.sharePhoto, SHARE_PHOTO_TAG);
-                ourInstance.TAGList.add(0, SHARE_PHOTO_TAG);
-                ourInstance.fragmentHashtable.put(ourInstance.fragmentHashtable.size(), ourInstance.sharePhoto);
-                break;
-            case CONTACTS_TAG:
+			default:
+			case GALLERY_TAG:
+				String mTAG = GALLERY_TAG;
+				Gallery mGallery = new Gallery();
+				if (!username.equals("")) {
+					Bundle args = new Bundle();
+					args.putString("username", username);
+					mGallery.setArguments(args);
+					mTAG = USER_GALLERY_TAG;
+				}
+				fragmentTransaction.replace(R.id.active_fragment, mGallery, mTAG);
+				ourInstance.TAGList.add(0, mTAG);
+				ourInstance.fragmentHashtable.put(ourInstance.fragmentHashtable.size(), mGallery);
+				break;
+			case SHARE_PHOTO_TAG:
+				Bundle args = new Bundle();
 
-                fragmentTransaction.replace(R.id.active_fragment, ourInstance.contacts, CONTACTS_TAG);
-                ourInstance.TAGList.add(0, CONTACTS_TAG);
-                ourInstance.fragmentHashtable.put(ourInstance.fragmentHashtable.size(), ourInstance.contacts);
-                break;
-        }
+				if (username.equals(ADD_AVATAR)) {
+					args.putInt("type", 2);
+				} else
+					args.putInt("type", 1);
+				ourInstance.sharePhoto.setArguments(args);
 
-        fragmentTransaction.commit();
-    }
+				fragmentTransaction.replace(R.id.active_fragment, ourInstance.sharePhoto, SHARE_PHOTO_TAG);
+				ourInstance.TAGList.add(0, SHARE_PHOTO_TAG);
+				ourInstance.fragmentHashtable.put(ourInstance.fragmentHashtable.size(), ourInstance.sharePhoto);
+				break;
+			case CONTACTS_TAG:
 
-    private void setIconVisibility(String TAG) {
+				fragmentTransaction.replace(R.id.active_fragment, ourInstance.contacts, CONTACTS_TAG);
+				ourInstance.TAGList.add(0, CONTACTS_TAG);
+				ourInstance.fragmentHashtable.put(ourInstance.fragmentHashtable.size(), ourInstance.contacts);
+				break;
+		}
 
-        ourInstance.allPhotos.setAlpha((float) 0.3);
-        ourInstance.addPhoto.setAlpha((float) 0.3);
-        ourInstance.myProfile.setAlpha((float) 0.3);
+		fragmentTransaction.commit();
+	}
 
-        switch (TAG) {
-            case GALLERY_TAG: {
-                ourInstance.allPhotos.setAlpha((float) 1.0);
-                break;
-            }
-            case SHARE_PHOTO_TAG: {
-                ourInstance.addPhoto.setAlpha((float) 1.0);
-                break;
-            }
-            case CONTACTS_TAG: {
-                ourInstance.myProfile.setAlpha((float) 1.0);
-                break;
-            }
-        }
-    }
+	private void setIconVisibility(String TAG) {
 
-    public void popBackStack() {
-        int size = ourInstance.fragmentHashtable.size() - 1;
+		ourInstance.allPhotos.setAlpha((float) 0.3);
+		ourInstance.addPhoto.setAlpha((float) 0.3);
+		ourInstance.myProfile.setAlpha((float) 0.3);
 
-        if (size > 0) {
+		switch (TAG) {
+			case GALLERY_TAG: {
+				ourInstance.allPhotos.setAlpha((float) 1.0);
+				break;
+			}
+			case SHARE_PHOTO_TAG: {
+				ourInstance.addPhoto.setAlpha((float) 1.0);
+				break;
+			}
+			case CONTACTS_TAG: {
+				ourInstance.myProfile.setAlpha((float) 1.0);
+				break;
+			}
+		}
+	}
 
-            ourInstance.fragmentHashtable.remove(size);
-            ourInstance.TAGList.remove(0);
-            size--;
-            Fragment fragment = ourInstance.fragmentHashtable.get(size);
-            String TAG = ourInstance.TAGList.get(0);
-            ourInstance.setIconVisibility(TAG);
+	public void popBackStack() {
+		int size = ourInstance.fragmentHashtable.size() - 1;
 
-            ourInstance.fragmentManager.beginTransaction()
-                    .replace(R.id.active_fragment, fragment).commit();
-        } else
-            activity.finish();
-    }
+		if (size > 0) {
+
+			ourInstance.fragmentHashtable.remove(size);
+			ourInstance.TAGList.remove(0);
+			size--;
+			Fragment fragment = ourInstance.fragmentHashtable.get(size);
+			String TAG = ourInstance.TAGList.get(0);
+			//ourInstance.setIconVisibility(TAG);
+
+			ourInstance.fragmentManager.beginTransaction()
+					.replace(R.id.active_fragment, fragment).commit();
+		} else
+			activity.finish();
+	}
 }

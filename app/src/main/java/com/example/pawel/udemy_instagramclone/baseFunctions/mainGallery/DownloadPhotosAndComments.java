@@ -13,142 +13,169 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import io.reactivex.Observable;
+import io.reactivex.ObservableSource;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Function;
+import io.reactivex.schedulers.Schedulers;
+
 /**
  * Created by Pawel on 01.05.2018.
  */
 
 public class DownloadPhotosAndComments {
-    private static final DownloadPhotosAndComments ourInstance = new DownloadPhotosAndComments();
+	private static final DownloadPhotosAndComments ourInstance = new DownloadPhotosAndComments();
 
-    public static DownloadPhotosAndComments getInstance() {
-        return ourInstance;
-    }
+	public static DownloadPhotosAndComments getInstance() {
+		return ourInstance;
+	}
 
-    private DownloadPhotosAndComments() {
-    }
+	private DownloadPhotosAndComments() {
+	}
 
 
-    private ParseQuery<ParseObject> query;
-    private String username;
-    private OnPhotoObjectListener onPhotoObjectListener;
-    private OnPhotoDownloadStatusListener onPhotoDownloadStatusListener;
+	private ParseQuery<ParseObject> query;
+	private String username;
+	private OnPhotoObjectListener onPhotoObjectListener;
+	private OnPhotoDownloadStatusListener onPhotoDownloadStatusListener;
+	private Disposable disposable;
 
-    public void transferQuery(String username, OnPhotoObjectListener onPhotoObjectListener, OnPhotoDownloadStatusListener onPhotoDownloadStatusListener) {
-        this.username = username;
-        this.onPhotoObjectListener = onPhotoObjectListener;
-        this.onPhotoDownloadStatusListener = onPhotoDownloadStatusListener;
+	public void transferQuery(String username, OnPhotoObjectListener onPhotoObjectListener, OnPhotoDownloadStatusListener onPhotoDownloadStatusListener) {
+		this.username = username;
+		this.onPhotoObjectListener = onPhotoObjectListener;
+		this.onPhotoDownloadStatusListener = onPhotoDownloadStatusListener;
 
-        setupImageQuery();
+		setupImageQuery();
 
-        readPhotoObjectsInBackground();
-    }
+		readPhotoObjectsInBackground();
+	}
 
-    private void setupImageQuery() {
+	private void setupImageQuery() {
 
-        query = ParseQuery.getQuery("Image");
+		query = ParseQuery.getQuery("Image");
 
-        query.addDescendingOrder("createdAt");
-        query.orderByDescending("createdAt");
+		query.addDescendingOrder("createdAt");
+		query.orderByDescending("createdAt");
 
-        if (username != null) {
-            query.whereEqualTo("username", username);
-        }
-        query.addDescendingOrder("createdAt");
-        query.orderByDescending("createdAt");
-    }
+		if (username != null) {
+			query.whereEqualTo("username", username);
+		}
+		query.addDescendingOrder("createdAt");
+		query.orderByDescending("createdAt");
+	}
 
-    private void readPhotoObjectsInBackground() {
+	private void readPhotoObjectsInBackground() {
 
-        onPhotoDownloadStatusListener.onStatusChange(true);
-        query.findInBackground(new FindCallback<ParseObject>() {
-            @Override
-            public void done(List<ParseObject> objects, ParseException e) {
+		onPhotoDownloadStatusListener.onStatusChange(true);
+		query.findInBackground(new FindCallback<ParseObject>() {
+			@Override
+			public void done(List<ParseObject> objects, ParseException e) {
 
-                if (e == null && objects != null && objects.size() > 0) {
+				if (e == null && objects != null && objects.size() > 0) {
 
-                    createListOfPhotoObjects(objects);
+					createListOfPhotoObjects(objects);
 
-                } else {
-                    if (e != null)
-                        Log.i("Error", e.getMessage().toString());
-                }
-                onPhotoDownloadStatusListener.onStatusChange(false);
-            }
-        });
-    }
+				} else {
+					if (e != null)
+						Log.i("Error", e.getMessage().toString());
+				}
+				onPhotoDownloadStatusListener.onStatusChange(false);
+			}
+		});
+	}
 
-    private void createListOfPhotoObjects(List<ParseObject> objects) {
+	private void createListOfPhotoObjects(List<ParseObject> objects) {
+		disposable = Observable.fromIterable(objects)
+				.concatMap((Function<ParseObject, ObservableSource<?>>) imageObject -> {
+					PhotoInfoObject photoInfoObject=getDownloadedPhotoObject(imageObject);
+					return Observable.just(photoInfoObject);
+				})
+				.subscribeOn(Schedulers.io())
+				.observeOn(AndroidSchedulers.mainThread())
+				.subscribe(object->publish((PhotoInfoObject) object));
 
+		/*
         for (final ParseObject obj : objects) {
 
             ParseFile file = (ParseFile) obj.get("image");
             PhotoInfoObject photoInfoObject = new PhotoInfoObject(obj.getString("username"), obj.getString("description"), file.getUrl(), getAvatarBitmap(obj.getString("username")), obj.getObjectId(), getPhotoComments(obj));
             onPhotoObjectListener.onCreated(photoInfoObject);
-        }
-    }
+        }*/
+	}
 
-    private String getAvatarBitmap(String mUsername) {
+	private PhotoInfoObject getDownloadedPhotoObject(ParseObject obj) {
+		ParseFile file = (ParseFile) obj.get("image");
+		PhotoInfoObject photoInfoObject = new PhotoInfoObject(obj.getString("username"), obj.getString("description"), file.getUrl(), getAvatarBitmap(obj.getString("username")), obj.getObjectId(), getPhotoComments(obj));
+		return photoInfoObject;
+	}
 
-        ParseQuery<ParseUser> user = ParseUser.getQuery();
-        user.whereEqualTo("username", mUsername);
+	private void publish(PhotoInfoObject photoInfoObject) {
+		onPhotoObjectListener.onCreated(photoInfoObject);
+	}
 
-        try {
-            List<ParseUser> users = new ArrayList<>(user.find());
+	private String getAvatarBitmap(String mUsername) {
 
-            ParseUser chosenUser = users.get(0);
+		ParseQuery<ParseUser> user = ParseUser.getQuery();
+		user.whereEqualTo("username", mUsername);
 
-            ParseFile avatarFile = (ParseFile) chosenUser.get("avatar");
-            return avatarFile.getUrl();
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
+		try {
+			List<ParseUser> users = new ArrayList<>(user.find());
 
-        return null;
-    }
+			ParseUser chosenUser = users.get(0);
 
-    private List<Comment> getPhotoComments(ParseObject obj) {
-        final List<Comment> objComments = createCommentList(obj.getObjectId());
+			ParseFile avatarFile = (ParseFile) chosenUser.get("avatar");
+			return avatarFile.getUrl();
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
 
-        Collections.reverse(objComments);
+		return null;
+	}
 
-        objComments.add(new Comment());
-        return objComments;
-    }
+	private List<Comment> getPhotoComments(ParseObject obj) {
+		final List<Comment> objComments = createCommentList(obj.getObjectId());
 
-    private List<Comment> createCommentList(String photoID) {
+		Collections.reverse(objComments);
 
-        ParseQuery<ParseObject> getComments = ParseQuery.getQuery("Comment");
-        getComments.whereEqualTo("photoId", photoID);
-        getComments.addDescendingOrder("createdAt");
+		objComments.add(new Comment());
+		return objComments;
+	}
 
-        List<Comment> objComments = new ArrayList<>();
+	private List<Comment> createCommentList(String photoID) {
 
-        List<ParseObject> comObj;
+		ParseQuery<ParseObject> getComments = ParseQuery.getQuery("Comment");
+		getComments.whereEqualTo("photoId", photoID);
+		getComments.addDescendingOrder("createdAt");
 
-        try {
-            comObj = getComments.find();
+		List<Comment> objComments = new ArrayList<>();
 
-            int limit = 0;
-            for (ParseObject getOne : comObj) {
+		List<ParseObject> comObj;
 
-                objComments.add(new Comment(getOne.getString("comment"), getOne.getString("authorId")));
+		try {
+			comObj = getComments.find();
 
-                if (limit == 2) {
-                    break;
-                }
-                limit++;
-            }
-        } catch (ParseException e1) {
-            e1.printStackTrace();
-        }
-        return objComments;
-    }
+			int limit = 0;
+			for (ParseObject getOne : comObj) {
 
-    public interface OnPhotoObjectListener {
-        void onCreated(PhotoInfoObject photoInfoObject);
-    }
+				objComments.add(new Comment(getOne.getString("comment"), getOne.getString("authorId")));
 
-    public interface OnPhotoDownloadStatusListener {
-        void onStatusChange(boolean loading);
-    }
+				if (limit == 2) {
+					break;
+				}
+				limit++;
+			}
+		} catch (ParseException e1) {
+			e1.printStackTrace();
+		}
+		return objComments;
+	}
+
+	public interface OnPhotoObjectListener {
+		void onCreated(PhotoInfoObject photoInfoObject);
+	}
+
+	public interface OnPhotoDownloadStatusListener {
+		void onStatusChange(boolean loading);
+	}
 }

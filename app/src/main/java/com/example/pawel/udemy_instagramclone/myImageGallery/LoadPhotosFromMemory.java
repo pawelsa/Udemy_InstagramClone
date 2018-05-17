@@ -5,6 +5,7 @@ import android.content.ContentUris;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.MediaStore;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,13 +24,13 @@ public class LoadPhotosFromMemory {
     private LoadPhotosFromMemory() {
     }
 
-    OnPhotoLoadedListener onPhotoLoadedListener;
+    private OnPhotoLoadedListener onPhotoLoadedListener;
 
-    AlbumLoader albumLoader;
-    Cursor albumCursor;
-    Cursor photoCursor;
+    private AlbumLoader albumLoader;
+    private Cursor albumCursor;
+    private Cursor photoCursor;
     private List<Photo> albums;
-    Activity activity;
+    private Activity activity;
 
 
     public void proceedToLoading(Activity activity, OnPhotoLoadedListener onPhotoLoadedListener) {
@@ -51,6 +52,7 @@ public class LoadPhotosFromMemory {
         if (albumCursor != null) {
             albumCursor.close();
         }
+		Log.i("Plus", "Plus");
         albums.add(new Photo());
         onPhotoLoadedListener.photoLoaded(new Photo());
     }

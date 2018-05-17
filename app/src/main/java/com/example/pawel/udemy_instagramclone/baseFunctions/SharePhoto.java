@@ -41,243 +41,232 @@ import java.io.IOException;
 import static android.app.Activity.RESULT_OK;
 
 public class SharePhoto extends Fragment implements UploadChosenImage.OnImageSharedListener {
-    private static final SharePhoto ourInstance = new SharePhoto();
+	private static final SharePhoto ourInstance = new SharePhoto();
 
-    public static SharePhoto getInstance() {
-        return ourInstance;
-    }
+	public static SharePhoto getInstance() {
+		return ourInstance;
+	}
 
-    private static final int RC_PHOTO_PICKER = 2;
+	private static final int RC_PHOTO_PICKER = 2;
 
-    private int actionType;
-    private RecyclerView myGalleryView;
-    private CropperView cropView;
-    private EditText addDescription;
-    private SquareCropView squareCropView;
-    GalleryAdapter myGalleryAdapter;
+	private int actionType;
+	private RecyclerView myGalleryView;
+	private CropperView cropView;
+	private EditText addDescription;
+	private SquareCropView squareCropView;
+	private GalleryAdapter myGalleryAdapter;
 
 
-    @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        super.onCreateOptionsMenu(menu, inflater);
-        inflater.inflate(R.menu.crop_image_menu, menu);
-    }
+	@Override
+	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+		super.onCreateOptionsMenu(menu, inflater);
+		inflater.inflate(R.menu.crop_image_menu, menu);
+	}
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.accept_changes: {
-                acceptCrop();
-                break;
-            }
-            case R.id.decline_changes: {
-                declineCrop();
-                break;
-            }
-        }
-        return super.onOptionsItemSelected(item);
-    }
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+			case R.id.accept_changes: {
+				acceptCrop();
+				break;
+			}
+			case R.id.decline_changes: {
+				declineCrop();
+				break;
+			}
+		}
+		return super.onOptionsItemSelected(item);
+	}
 
-    @Nullable
-    @Override
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.activity_share_photo, container, false);
-    }
+	@Nullable
+	@Override
+	public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
+		return inflater.inflate(R.layout.activity_share_photo, container, false);
+	}
 
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        cropView = view.findViewById(R.id.cropView);
-        addDescription = view.findViewById(R.id.addDescription);
-        squareCropView = view.findViewById(R.id.squareCropViewRelativeLayout);
-        myGalleryView = view.findViewById(R.id.myGalleryView);
-    }
+	@Override
+	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+		super.onViewCreated(view, savedInstanceState);
+		cropView = view.findViewById(R.id.cropView);
+		addDescription = view.findViewById(R.id.addDescription);
+		squareCropView = view.findViewById(R.id.squareCropViewRelativeLayout);
+		myGalleryView = view.findViewById(R.id.myGalleryView);
+	}
 
-    @Override
-    public void setArguments(@Nullable Bundle args) {
-        super.setArguments(args);
+	@Override
+	public void setArguments(@Nullable Bundle args) {
+		super.setArguments(args);
 
-        if (args != null) {
-            actionType = args.getInt("type");
-        }
-    }
+		if (args != null) {
+			actionType = args.getInt("type");
+		}
+	}
 
-    @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
+	@Override
+	public void onActivityCreated(Bundle savedInstanceState) {
+		super.onActivityCreated(savedInstanceState);
 
-        initialization();
+		initialization();
 
-        getAlbumsIfListIsEmpty();
+		getAlbumsIfListIsEmpty();
 
-        setupGalleryRecyclerView();
+		setupGalleryRecyclerView();
 
-        setupGalleryAdapter();
-    }
+		setupGalleryAdapter();
+	}
 
-    private void initialization() {
+	private void initialization() {
 
-        setHasOptionsMenu(true);
+		setHasOptionsMenu(true);
 
-        ActionBar actionBar = ((AppCompatActivity) getActivity()).getSupportActionBar();
-        if (actionBar != null) {
-            actionBar.show();
-            actionBar.setDisplayHomeAsUpEnabled(true);
-        }
-        myGalleryAdapter = new GalleryAdapter(getContext());
+		ActionBar actionBar = ((AppCompatActivity) getActivity()).getSupportActionBar();
+		if (actionBar != null) {
+			actionBar.show();
+			actionBar.setDisplayHomeAsUpEnabled(true);
+		}
+		myGalleryAdapter = new GalleryAdapter(getContext());
 
-        cropView.setGridCallback(new CropperView.GridCallback() {
-            @Override
-            public boolean onGestureStarted() {
-                return true;
-            }
+		cropView.setGridCallback(new CropperView.GridCallback() {
+			@Override
+			public boolean onGestureStarted() {
+				return true;
+			}
 
-            @Override
-            public boolean onGestureCompleted() {
-                return false;
-            }
-        });
+			@Override
+			public boolean onGestureCompleted() {
+				return false;
+			}
+		});
 
-        requestPermission();
-    }
+		requestPermission();
+	}
 
-    private void requestPermission() {
+	private void requestPermission() {
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (getActivity().checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+			if (getActivity().checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
 
-                requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 0);
-            } else {
+				requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 0);
+			} else {
 
-                getAlbums();
-            }
-        }
-    }
+				getAlbums();
+			}
+		}
+	}
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+	@Override
+	public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            getAlbums();
-        }
-    }
+		if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+			getAlbums();
+		}
+	}
 
-    private void getAlbums() {
+	private void getAlbums() {
 
-        try {
-            final LoadPhotosFromMemory.OnPhotoLoadedListener onPhotoLoadedListener = myGalleryAdapter.getOnPhotoLoadListener();
-            Runnable runnable=new Runnable() {
-                @Override
-                public void run() {
-                    LoadPhotosFromMemory loadPhotosFromMemory = LoadPhotosFromMemory.getInstance();
-                    loadPhotosFromMemory.proceedToLoading(getActivity(), onPhotoLoadedListener);
-                }
-            };
-            Handler handler=new Handler();
-            handler.post(runnable);
-        } catch (final Exception e) {
-            e.printStackTrace();
-        }
-    }
+		final LoadPhotosFromMemory.OnPhotoLoadedListener onPhotoLoadedListener = myGalleryAdapter.getOnPhotoLoadListener();
+		LoadPhotosFromMemory loadPhotosFromMemory = LoadPhotosFromMemory.getInstance();
+		loadPhotosFromMemory.proceedToLoading(getActivity(), onPhotoLoadedListener);
+	}
 
-    private void getAlbumsIfListIsEmpty() {
+	private void getAlbumsIfListIsEmpty() {
 
-        if (myGalleryAdapter.isEmpty()) {
-            getAlbums();
-        }
-    }
+		if (myGalleryAdapter.isEmpty()) {
+			getAlbums();
+		}
+	}
 
-    private void setupGalleryRecyclerView() {
+	private void setupGalleryRecyclerView() {
 
-        myGalleryView.setHasFixedSize(true);
-        myGalleryView.setLayoutManager(new GridLayoutManager(getContext(), 3));
-    }
+		myGalleryView.setHasFixedSize(true);
+		myGalleryView.setLayoutManager(new GridLayoutManager(getContext(), 3));
+	}
 
-    private void setupGalleryAdapter() {
+	private void setupGalleryAdapter() {
 
-        myGalleryView.setAdapter(myGalleryAdapter);
+		myGalleryView.setAdapter(myGalleryAdapter);
 
-        myGalleryAdapter.setOnItemSelectedListener(new GalleryAdapter.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(Photo mPhoto) {
+		myGalleryAdapter.setOnItemSelectedListener(new GalleryAdapter.OnItemSelectedListener() {
+			@Override
+			public void onItemSelected(Photo mPhoto) {
 
-                if (mPhoto.uri != null) {
-                    Uri mUri = mPhoto.uri;
-                    setupCropView(mUri);
-                } else {
-                    Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                    intent.setType("image/*");
-                    intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
-                    startActivityForResult(Intent.createChooser(intent, "Complete action using"), RC_PHOTO_PICKER);
-                }
-            }
-        });
-    }
+				if (mPhoto.uri != null) {
+					Uri mUri = mPhoto.uri;
+					setupCropView(mUri);
+				} else {
+					Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+					intent.setType("image/*");
+					intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
+					startActivityForResult(Intent.createChooser(intent, "Complete action using"), RC_PHOTO_PICKER);
+				}
+			}
+		});
+	}
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == RC_PHOTO_PICKER && resultCode == RESULT_OK) {
-            Uri uri = data.getData();
-            setupCropView(uri);
-        }
-    }
+	@Override
+	public void onActivityResult(int requestCode, int resultCode, Intent data) {
+		super.onActivityResult(requestCode, resultCode, data);
+		if (requestCode == RC_PHOTO_PICKER && resultCode == RESULT_OK) {
+			Uri uri = data.getData();
+			setupCropView(uri);
+		}
+	}
 
-    private void setupCropView(Uri mUri) {
-        try {
-            Bitmap bitmap = MediaStore.Images.Media.getBitmap(getActivity().getContentResolver(), mUri);
-            cropView.setImageBitmap(bitmap);
-            squareCropView.setVisibility(View.VISIBLE);
+	private void setupCropView(Uri mUri) {
+		try {
+			Bitmap bitmap = MediaStore.Images.Media.getBitmap(getActivity().getContentResolver(), mUri);
+			cropView.setImageBitmap(bitmap);
+			squareCropView.setVisibility(View.VISIBLE);
 
-            if (actionType == 1) {
-                addDescription.setVisibility(View.VISIBLE);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+			if (actionType == 1) {
+				addDescription.setVisibility(View.VISIBLE);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
-    private void acceptCrop() {
+	private void acceptCrop() {
 
-        BitmapResult result = cropView.getCroppedBitmap();
+		BitmapResult result = cropView.getCroppedBitmap();
 
-        if (result.getState() == CropState.FAILURE_GESTURE_IN_PROCESS) {
-            Toast.makeText(getActivity(), "unable to crop. Gesture in progress", Toast.LENGTH_SHORT).show();
-            return;
-        }
+		if (result.getState() == CropState.FAILURE_GESTURE_IN_PROCESS) {
+			Toast.makeText(getActivity(), "unable to crop. Gesture in progress", Toast.LENGTH_SHORT).show();
+			return;
+		}
 
-        Bitmap bitmap = result.getBitmap();
+		Bitmap bitmap = result.getBitmap();
 
-        if (bitmap != null) {
-            UploadChosenImage uploadChosenImage = UploadChosenImage.getInstance();
+		if (bitmap != null) {
+			UploadChosenImage uploadChosenImage = UploadChosenImage.getInstance();
 
-            if (actionType == 1) {
-                String description = addDescription.getText().toString();
-                uploadChosenImage.uploadImage(bitmap, description, this);
-            } else {
-                uploadChosenImage.uploadImage(bitmap, this);
-            }
-        }
-    }
+			if (actionType == 1) {
+				String description = addDescription.getText().toString();
+				uploadChosenImage.uploadImage(bitmap, description, this);
+			} else {
+				uploadChosenImage.uploadImage(bitmap, this);
+			}
+		}
+	}
 
-    private void declineCrop() {
-        closeFragment();
-    }
+	private void declineCrop() {
+		closeFragment();
+	}
 
-    private void closeFragment() {
-        MyFragmentManager myFragmentManager = MyFragmentManager.getInstance();
-        myFragmentManager.popBackStack();
-    }
+	private void closeFragment() {
+		MyFragmentManager myFragmentManager = MyFragmentManager.getInstance();
+		myFragmentManager.popBackStack();
+	}
 
-    @Override
-    public void onSuccessful() {
-        Toast.makeText(getActivity(), "Successfully uploaded image", Toast.LENGTH_LONG).show();
-        closeFragment();
-    }
+	@Override
+	public void onSuccessful() {
+		Toast.makeText(getActivity(), "Successfully uploaded image", Toast.LENGTH_LONG).show();
+		closeFragment();
+	}
 
-    @Override
-    public void onFailure() {
-        Toast.makeText(getActivity(), "Unsuccessfully uploaded image", Toast.LENGTH_LONG).show();
-    }
+	@Override
+	public void onFailure() {
+		Toast.makeText(getActivity(), "Unsuccessfully uploaded image", Toast.LENGTH_LONG).show();
+	}
 }

@@ -100,6 +100,8 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.Holder> 
         return albums.size();
     }
 
+
+
     class Holder extends RecyclerView.ViewHolder {
 
         CustomImageView imageView;
@@ -112,12 +114,10 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.Holder> 
     }
 
     public void setOnItemSelectedListener(OnItemSelectedListener onItemSelectedListener) {
-
         mOnItemSelectedListener = onItemSelectedListener;
     }
 
     public interface OnItemSelectedListener {
-
         void onItemSelected(Photo mPhoto);
     }
 
