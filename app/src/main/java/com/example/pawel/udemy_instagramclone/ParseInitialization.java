@@ -2,6 +2,9 @@ package com.example.pawel.udemy_instagramclone;
 
 import android.app.Application;
 
+import com.parse.Parse;
+import com.parse.ParseACL;
+
 public class ParseInitialization extends Application {
   
   @Override
