@@ -30,29 +30,27 @@ public class LoadPhotosFromMemory {
     private Cursor albumCursor;
     private Cursor photoCursor;
     private List<Photo> albums;
-    private Activity activity;
 
 
     public void proceedToLoading(Activity activity, OnPhotoLoadedListener onPhotoLoadedListener) {
 
         this.onPhotoLoadedListener = onPhotoLoadedListener;
-        this.activity = activity;
         albums = new ArrayList<>();
-        albumLoader = new AlbumLoader(this.activity);
+        albumLoader = new AlbumLoader(activity);
         albumCursor = albumLoader.loadInBackground();
 
         startLoading();
     }
 
     private void startLoading() {
-
+        
+        albums.add(new Photo());
         if (albumCursor != null && albumCursor.moveToFirst()) {
             loadAlbums();
         }
         if (albumCursor != null) {
             albumCursor.close();
         }
-		Log.i("Plus", "Plus");
         albums.add(new Photo());
         onPhotoLoadedListener.photoLoaded(new Photo());
     }

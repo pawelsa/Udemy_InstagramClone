@@ -1,6 +1,7 @@
 package com.example.pawel.udemy_instagramclone.myImageGallery;
 
 import android.content.Context;
+import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -23,7 +24,7 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.Holder> 
     private List<Photo> albums;
     private Context context;
 
-    OnItemSelectedListener mOnItemSelectedListener;
+    private OnItemSelectedListener mOnItemSelectedListener;
 
 
     public GalleryAdapter( Context context) {
@@ -39,8 +40,9 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.Holder> 
         return albums.isEmpty();
     }
 
+    @NonNull
     @Override
-    public Holder onCreateViewHolder(ViewGroup parent, int viewType) {
+    public Holder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
 
         View layout = LayoutInflater.from(parent.getContext()).inflate(R.layout.image_layout, null);
 
@@ -48,7 +50,7 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.Holder> 
     }
 
     @Override
-    public void onBindViewHolder(Holder holder, final int position) {
+    public void onBindViewHolder(@NonNull Holder holder, final int position) {
 
         fillImageViewInMyGallery(holder, position);
 
@@ -59,6 +61,11 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.Holder> 
     private void fillImageViewInMyGallery(Holder holder, int position) {
 
         holder.imageView.layout(0, 0, 0, 0);
+        
+        if (position == 0){
+            Glide.with(context).load(R.drawable.ic_take_photo).apply(new RequestOptions().centerInside()).into(holder.imageView);
+            return;
+        }
 
         if (albums.get(position).uri != null) {
 
@@ -67,24 +74,20 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.Holder> 
 
             final int BORDER = 80;
             holder.imageView.setPadding(BORDER, BORDER, BORDER, BORDER);
-            Glide.with(context).load(R.drawable.add).apply(new RequestOptions().centerInside()).into(holder.imageView);
+            Glide.with(context).load(R.drawable.ic_add_photo).apply(new RequestOptions().centerInside()).into(holder.imageView);
         } else {
 
             Glide.tearDown();
-
             holder.imageView.setImageBitmap(null);
         }
     }
 
     private void onImageClickLister(Holder holder, final int position) {
 
-        holder.imageView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+        holder.imageView.setOnClickListener(v -> {
 
-                if (mOnItemSelectedListener != null) {
-                    mOnItemSelectedListener.onItemSelected(albums.get(position));
-                }
+            if (mOnItemSelectedListener != null) {
+                mOnItemSelectedListener.onItemSelected(albums.get(position));
             }
         });
 
@@ -98,6 +101,12 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.Holder> 
     @Override
     public int getItemCount() {
         return albums.size();
+    }
+    
+    @Override
+    public void photoLoaded(Photo photo) {
+        albums.add(photo);
+        notifyDataSetChanged();
     }
 
 
@@ -119,11 +128,5 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.Holder> 
 
     public interface OnItemSelectedListener {
         void onItemSelected(Photo mPhoto);
-    }
-
-    @Override
-    public void photoLoaded(Photo photo) {
-        albums.add(photo);
-        notifyDataSetChanged();
     }
 }

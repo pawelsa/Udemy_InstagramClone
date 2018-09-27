@@ -66,7 +66,7 @@ public class Gallery extends android.support.v4.app.Fragment implements Download
 
     @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         return inflater.inflate(R.layout.activity_gallery, container, false);
     }
 
@@ -153,13 +153,10 @@ public class Gallery extends android.support.v4.app.Fragment implements Download
     private void transferQuery() {
 
         final DownloadPhotosAndComments.OnPhotoDownloadStatusListener onPhotoDownloadStatusListener = this;
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
+        Runnable runnable = () -> {
 
-                DownloadPhotosAndComments downloadPhotosAndComments = DownloadPhotosAndComments.getInstance();
-                downloadPhotosAndComments.transferQuery(username, adapter.getOnPhotoObjectListener(), onPhotoDownloadStatusListener);
-            }
+            DownloadPhotosAndComments downloadPhotosAndComments = DownloadPhotosAndComments.getInstance();
+            downloadPhotosAndComments.transferQuery(username, adapter.getOnPhotoObjectListener(), onPhotoDownloadStatusListener);
         };
         Handler handler = new Handler();
         handler.post(runnable);
@@ -167,53 +164,37 @@ public class Gallery extends android.support.v4.app.Fragment implements Download
 
     private void sendButtonOnClickListener() {
 
-        sendButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+        sendButton.setOnClickListener(v -> {
 
-                if (!Objects.equals(ImageID, "")) {
+            if (!Objects.equals(ImageID, "")) {
 
-                    String comment = addCommentEditText.getText().toString();
+                String comment = addCommentEditText.getText().toString();
 
-                    addCommentLayout.setVisibility(View.GONE);
-                    InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
-                    imm.hideSoftInputFromWindow(addCommentEditText.getWindowToken(), 0);
-                    addCommentEditText.setText("");
+                addCommentLayout.setVisibility(View.GONE);
+                InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(addCommentEditText.getWindowToken(), 0);
+                addCommentEditText.setText("");
 
-                    ParseObject addComment = new ParseObject("Comment");
+                ParseObject addComment = new ParseObject("Comment");
 
-                    addComment.put("photoId", ImageID);
-                    addComment.put("authorId", ParseUser.getCurrentUser().getUsername());
-                    addComment.put("comment", comment);
+                addComment.put("photoId", ImageID);
+                addComment.put("authorId", ParseUser.getCurrentUser().getUsername());
+                addComment.put("comment", comment);
 
-                    addComment.saveInBackground(new SaveCallback() {
-                        @Override
-                        public void done(ParseException e) {
-
-                            if (e == null) {
-
-                                Log.i("Comment", "Added");
-                            } else {
-
-                                Log.i("Comment", "Error");
-                            }
-                        }
-                    });
-
-                    ImageID = "";
-                }
+                addComment.saveInBackground(e -> {
+                    if (e == null) {
+                        Log.i("Comment", "Added");
+                    } else {
+                        Log.i("Comment", "Error");
+                    }
+                });
+                ImageID = "";
             }
         });
     }
 
-
     private void setOnRefreshListener() {
-        refreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                refresh();
-            }
-        });
+        refreshLayout.setOnRefreshListener(this::refresh);
     }
 
     public void refresh() {
@@ -221,20 +202,14 @@ public class Gallery extends android.support.v4.app.Fragment implements Download
         transferQuery();
     }
 
-
     private void keyBoardEventListener() {
 
-        KeyboardVisibilityEvent.setEventListener(getActivity(), new KeyboardVisibilityEventListener() {
-            @Override
-            public void onVisibilityChanged(boolean isOpen) {
-
-                if (!isOpen) {
-
-                    addCommentLayout.setVisibility(View.GONE);
-                    ImageID = "";
-                    addCommentEditText.setText("");
-                    addCommentEditText.clearFocus();
-                }
+        KeyboardVisibilityEvent.setEventListener(getActivity(), isOpen -> {
+            if (!isOpen) {
+                addCommentLayout.setVisibility(View.GONE);
+                ImageID = "";
+                addCommentEditText.setText("");
+                addCommentEditText.clearFocus();
             }
         });
     }

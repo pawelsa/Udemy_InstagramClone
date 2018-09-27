@@ -68,21 +68,18 @@ public class DownloadPhotosAndComments {
 	private void readPhotoObjectsInBackground() {
 
 		onPhotoDownloadStatusListener.onStatusChange(true);
-		query.findInBackground(new FindCallback<ParseObject>() {
-			@Override
-			public void done(List<ParseObject> objects, ParseException e) {
+		query.findInBackground((objects, e) -> {
 
-				if (e == null && objects != null && objects.size() > 0) {
+            if (e == null && objects != null && objects.size() > 0) {
 
-					createListOfPhotoObjects(objects);
+                createListOfPhotoObjects(objects);
 
-				} else {
-					if (e != null)
-						Log.i("Error", e.getMessage().toString());
-				}
-				onPhotoDownloadStatusListener.onStatusChange(false);
-			}
-		});
+            } else {
+                if (e != null)
+                    Log.i("Error", e.getMessage());
+            }
+            onPhotoDownloadStatusListener.onStatusChange(false);
+        });
 	}
 
 	private void createListOfPhotoObjects(List<ParseObject> objects) {
@@ -106,8 +103,7 @@ public class DownloadPhotosAndComments {
 
 	private PhotoInfoObject getDownloadedPhotoObject(ParseObject obj) {
 		ParseFile file = (ParseFile) obj.get("image");
-		PhotoInfoObject photoInfoObject = new PhotoInfoObject(obj.getString("username"), obj.getString("description"), file.getUrl(), getAvatarBitmap(obj.getString("username")), obj.getObjectId(), getPhotoComments(obj));
-		return photoInfoObject;
+		return  new PhotoInfoObject(obj.getString("username"), obj.getString("description"), file.getUrl(), getAvatarBitmap(obj.getString("username")), obj.getObjectId(), getPhotoComments(obj));
 	}
 
 	private void publish(PhotoInfoObject photoInfoObject) {
